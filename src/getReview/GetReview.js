@@ -1,16 +1,21 @@
 import React, {
   Component,
 } from 'react';
-import GetYourBenefit from '../components/GetYourBenefit';
+import Benefit from '../components/Benefit';
+import GetBenefit from '../components/GetBenefit';
 import OrderId from '../components/OrderId';
 import NegtiveReview from '../components/NegtiveReview';
 import Feedback from '../components/Feedback';
+
 import PositiveReview from '../components/PositiveReview';
 import SuccessBanner from '../components/SuccessBanner';
 import Responsive from 'react-responsive-decorator';
 import config from 'react-global-configuration';
-import configuration from '../config/config';
 import myData from '../data/reward.json';
+import logo_white from '../logo-white.svg';
+import { connect } from 'react-redux'
+import { bindActionCreators } from 'redux'
+import { ActionCreators } from '../actions'
 import {
   Card,
   message,
@@ -21,7 +26,11 @@ import axios from 'axios';
 import styles from './GetReview.css'
 import REMOTEHOST from '../remote-host';
 
+import logo from '../logo.svg'
 
+
+
+const remoteUrl = config.get('remotehost')
 
 const headStyle = {
   backgroundColor: 'transparent',
@@ -29,399 +38,121 @@ const headStyle = {
   fontSize: 24,
   width: '100%',
   border: 0,
-  overflowX : 'auto',
-  overflowY : 'auto',
+  overflowX: 'auto',
+  overflowY: 'auto',
 };
 
 
 
 const backwrap = {
 
-  backgroundColor:'#fff',
-  borderRadius:10,
+  backgroundColor: '#fff',
+  borderRadius: 10,
   boxShadow: "1px 3px 1px rgba(0,0,0,0.4)"
 };
 
 const defaultReward = 10;
 
-// const remoteUrl = process.env.NODE_ENV === 'development' ? "http://300gideon.local/" : "https://bp.sellerprofitpro.com/"
-const remoteUrl = REMOTEHOST;
 
 class GetReview extends Component {
-  constructor(props){
+  constructor(props) {
     super(props);
-    this.checkOrderId = this.checkOrderId.bind(this)
-    this.checkFeedback = this.checkFeedback.bind(this)
-    this.handleRateChange = this.handleRateChange.bind(this)
-    this.submitFeedback = this.submitFeedback.bind(this)
-    this.submitReview = this.submitReview.bind(this)
-    this.handleBenefitMethod = this.handleBenefitMethod.bind(this)
-    this.handleUserNameChange = this.handleUserNameChange.bind(this)
-    this.handleEmailChange = this.handleEmailChange.bind(this)
-    this.handleInformationSubmit = this.handleInformationSubmit.bind(this)
-    this.handleReviewScreenShotSubmit = this.handleReviewScreenShotSubmit.bind(this)
-    this.handleFeedbackTextChange = this.handleFeedbackTextChange.bind(this)
+    this.state = {
+      step: this.props.step_info[this.props.step_info.length - 1]
+    }
   }
-  state = {
-    key: 'order',
-    noTitleKey: 'order',
-    path: [],
-    value: 1,
-    star: 0,
-    review: 0,
-    benefit: "",
-    submit: 0,
-    reward: config.get('amount'),
-    feedback: 0,
-    period: "",
-    userName: "",
-    email: "",
-    order:{
-      items:[]
-    },
-    feedbackText: "",
-    reviewImage: false,
-    success: false,
-    isMobile: false
-  };
 
   componentDidMount() {
 
   }
 
-  onChange = e => {
-    this.setState({
-      value: e.target.value,
-    });
-  };
 
-  handlePeriodChange = e => {
-    this.setState({
-      period: e.target.value,
-    });
-  };
+  componentDidUpdate(prevProps) {
 
-  handleFeedbackChange = e => {
-    this.setState({
-      feedback: e.target.value,
-    });
-  };
-
-  handleBenefitMethod= e =>{
-    this.setState({
-      benefit: e.target.value,
-    })
-  }
-
-  handleUserNameChange = e =>{
-    this.setState({
-      userName: e.target.value,
-    })
-  }
-
-  handleEmailChange = e =>{
-    this.setState({
-      email: e.target.value,
-    })
-  }
-
-  checkOrderId(orderId){
-    orderId = orderId.replace(/[^0-9]/g, '');
-    const newOrderId = orderId.slice(0,3) + '-' + orderId.slice(3,10) + '-' + orderId.slice(10,17);
-    axios.get(`${remoteUrl}/graphql?query={order(amazon_order_id:%20%22${newOrderId}%22)%20{seller_id%20AmazonOrderId%20redeem%20{requestDate}%20items%20{ASIN%20country%20ItemPriceUSD}%20reward}}`).then(response => {
-      if (response.data.data.order === null) {
-        notification['error']({
-          message: 'Wrong order number.',
-          description:
-            <div><p>You order number is not right. Please check it again, the order id should be like this: </p>
-            <p>123-1234567-1234567</p></div>
-        });
-      } else if (response.data.data.order.items.length === 0) {
-        notification['error']({
-          message: 'No Item.',
-          description:
-            <div><p>Sorry, there is no item in this order. Please change the order ID and try again.</p></div>
-        });
-      } else if (response.data.data.order.redeem === null) {
-        this.setState({
-          order: response.data.data.order,
-          reward: response.data.data.order.reward || this.state.reward
-        })
-        notification['success']({
-          message: 'Notification Title',
-          description:
-            'Thank you for your purchasing',
-        });
-        this.setState({
-          noTitleKey: 'feedback'
-        });
-      } else {
-        notification['error']({
-          message: 'Sorry!',
-          description:
-            'I am sorry that, you have redeemed this order. Please change the order ID and have another try.',
-        });
+    let step_stack = this.props.step_info
+    if (step_stack != undefined) {
+      var step = step_stack[step_stack.length - 1]
+      // this.setState({step:step})
+      if (step != this.state.step) {
+        this.setState({ step: step })
       }
-    }).catch(err => {
-      console.log(err)
-    })
-  }
-
-  handleRateChange = value => {
-    this.setState({ star: value });
-  };
-
-  checkFeedback(){
-    if (this.state.star > 0 && this.state.period !== "") {
-      this.setState({
-        noTitleKey: 'review'
-      });
-      if (this.state.star >= 4) {
-        this.setState({
-          review: 1
-        });
-      } else {
-        this.setState({
-          review: 0
-        });
-      }
-    } else {
-      notification['error']({
-        message: 'Notification Title',
-        description:
-          <div><p>Please fulfill the two question.</p></div>
-      })
-    }
-  }
-  validateEmail(email) {
-    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
-  }
-
-  // handleInformationSubmit(){
-  //   if (this.state.benefit !== "" && this.state.email !== "" && this.state.userName !== ""){
-  //     if (this.validateEmail(this.state.email)) {
-  //       document.querySelector("#reviewWrap").removeChild(document.querySelector("#reviewWrap").firstChild)
-  //       this.setState({
-  //         success: true
-  //       })
-  //       var d = new Date();
-  //       var today = d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
-
-  //       notification['success']({
-  //         message: 'Got It!',
-  //         description:
-  //           'Thank you for your review and information, we will contact you as soon as possible',
-  //       });
-  //   } else {
-  //     notification['error']({
-  //       message: 'Notification Title',
-  //       description:
-  //         <div><p>Please check if you have fulfill the user name, email, and benefit method</p>
-  //         </div>
-  //     });
-  //   }
-  // }
-  // }
-  handleInformationSubmit(){
-    if (this.state.benefit !== "" && this.state.email !== "" && this.state.userName !== ""){
-      if (this.validateEmail(this.state.email)) {
-        document.querySelector("#reviewWrap").removeChild(document.querySelector("#reviewWrap").firstChild)
-        this.setState({
-          success: true
-        })
-        var d = new Date();
-        var today = d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
-        let url = `${remoteUrl}/graphql?query=mutation%20addRedeem%20{addRedeem(requestDate:"${today}",seller_id:"${this.state.order.seller_id}",AmazonOrderId:"${this.state.order.AmazonOrderId}",asin:"${this.state.order.items[0].ASIN}",country:"${this.state.order.items[0].country}",source:"${config.get('source')}",amount:"${this.state.reward}",usingTime:"${this.state.period}",star:${this.state.star},how_to_help:"${this.state.benefit}",name:"${this.state.userName}",email:"${this.state.email}",newsletter:true,attachments:"${this.state.path.join('||')}")%20{id}}`
-        axios.get(url).then(response => {
-          notification['success']({
-            message: 'Got It!',
-            description:
-              'Thank you for your review and information, we will contact you as soon as possible',
-          });
-        })
-      } else {
-        notification['error']({
-          message: 'Check your email!',
-          description:
-            <div>
-              <p>Please check your email, the format is not right.</p>
-            </div>
-        });
-      }
-    } else {
-      notification['error']({
-        message: 'Notification Title',
-        description:
-          <div><p>Please check if you have fulfill the user name, email, and benefit method</p>
-          </div>
-      });
     }
   }
 
-  submitFeedback(){
-    if (this.state.feedbackText !== "" && this.state.userName !== "" && this.state.email !== "" ) {
-      if (this.validateEmail(this.state.email)) {
-        var d = new Date();
-        var today = d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
-        let url = `${remoteUrl}/graphql?query=mutation%20addRedeem%20{addRedeem(requestDate:"${today}",seller_id:"${this.state.order.seller_id}",AmazonOrderId:"${this.state.order.AmazonOrderId}",asin:"${this.state.order.items[0].ASIN}",country:"${this.state.order.items[0].country}",source:"${config.get('source')}",amount:"${this.state.reward}",usingTime:"${this.state.period}",star:${this.state.star},how_to_help:"${this.state.feedbackText}",name:"${this.state.userName}",email:"${this.state.email}",newsletter:true,attachments:"${this.state.path}")%20{id}}`
-        axios.get(url).then(response => {
-          document.querySelector("#reviewWrap").removeChild(document.querySelector("#reviewWrap").firstChild)
-          this.setState({
-            success: true
-          })
-          notification['success']({
-            message: 'Got It!',
-            description:
-              'Thank you for your review and information, we will contact you as soon as possible',
-          });
-        })
-      } else {
-        notification['error']({
-          message: 'Check your email!',
-          description:
-            <div>
-              <p>Please check your email, the format is not right.</p>
-            </div>
-        });
-      }
-
-    } else {
-      notification['error']({
-        message: 'Please leave your feedback.',
-        description:
-          <div><p>Please tell us how to solve your problem and leave your name, email so we can contact you soon.</p>
-          </div>
-      });
-    }
+  stephighlightAdjust() {
+    return this.props.step_info.includes("negativeReview") ? 1 : 0
   }
 
-  handleReviewScreenShotSubmit(path){
-    this.setState({
-      reviewImage: true,
-      path: path
-    })
-    notification['success']({
-      message: 'Notification Title',
-      description:
-        'Thank you for your review, the image is uploaded successfully!',
-    });
-  }
-
-  submitReview(){
-    var image_list = document.getElementsByClassName('ant-upload-list-item-name')
-    if (this.state.reviewImage === true && image_list.length > 0) {
-
-      document.querySelector('#reviewWrap').removeChild(document.querySelector('#reviewb'))
-      this.setState(
-        {submit :1}
-      )
-
-      message.success('Thank you for your feedback.')
-    } else {
-      notification['error']({
-        message: 'Notification Title',
-        description:
-          <div><p>Please upload the screenshot of your review</p>
-          </div>
-      });
-    }
-  }
-
-  handleFeedbackTextChange = e => {
-    this.setState({feedbackText: e.target.value})
-  }
 
   render() {
 
-    const tabListNoTitle = [{
-        key: 'order',
-        // tab: '1. Your Order'
-        tab:
-        <div>
-          <p>1. Your Order</p>
-        </div>,
-      },
-      {
-        key: 'feedback',
-        tab:
-        <div>
-          <p>2. Your Feedback</p>
-        </div>,
-      },
-      {
-        key: 'review',
-        tab:
-         <div>
-          <p>3. Your Benefit</p>
-        </div>,
-      },
-    ];
     const contentListNoTitle = {
-      order:
-        <OrderId checkOrderId={this.checkOrderId}/>
-      ,
-      feedback:
-        <Feedback handlePeriodChange={this.handlePeriodChange} handleRateChange={this.handleRateChange} checkFeedback={this.checkFeedback} star={this.state.star} period={this.state.period}/>
-      ,
-      review:
-        (
-          this.state.review === 1 ?
-            <div id='reviewWrap'>
-              <PositiveReview  Country={this.state.order.items[0].country} OrderId={this.state.order.AmazonOrderId} reward={this.state.reward} ASIN={this.state.order.items[0].ASIN} handleReviewScreenShotSubmit={this.handleReviewScreenShotSubmit} submitReview={this.submitReview}/>
-              {this.state.submit === 1 ? <GetYourBenefit handleBenefitMethod={this.handleBenefitMethod} reward={this.state.reward} handleInformationSubmit={this.handleInformationSubmit} benefit={this.state.benefit} handleUserNameChange={this.handleUserNameChange} handleEmailChange={this.handleEmailChange}/> : ""}
-              {this.state.success === true ? <SuccessBanner positive={true}/> : ""}
-            </div>
-            :
-            <div id='reviewWrap'>
-              <NegtiveReview handleFeedbackTextChange={this.handleFeedbackTextChange} handleFeedbackChange={this.handleFeedbackChange} feedback={this.state.feedback} submitFeedback = {this.submitFeedback} handleUserNameChange={this.handleUserNameChange} handleEmailChange={this.handleEmailChange}/>
-              {this.state.success === true ? <SuccessBanner positive={false}/> : ""}
-            </div>
-        )
+      order: <OrderId/>,
+      feedback: <Feedback/>,
+      benefit: <Benefit/>,
+      getbenefit: <GetBenefit/>,
+      negativeReview: <NegtiveReview/>,
+      SuccessBanner: <SuccessBanner/>
+
+
     };
-
-    let className = this.state.isMobile === true ? "cellphone" : "desktop";
-
 
     return (
 
-        <div className="desktop">
-          <div  className="toptitle">
-            <h1>Claim Your Benefit Now!!!</h1>
+      <div className="desktop">
+        <div className="logoline">
+        <div className="svg-wp">
+          <svg viewBox="0 0 230 57"><path d="M58.411 8.192c1.063-.093 2.495.023 4.296.349.855.21 1.409.605 1.663 1.233.254.628.346 1.513.277 2.723-.07 1.21-.23 2.723-.485 4.584-.277 1.862-.485 4.12-.67 6.75.139-.443.347-.932.6-1.42 1.248-3.189 2.495-5.842 3.742-7.983 1.548-2.722 3.026-4.351 4.412-4.887.623-.302 1.293-.325 1.986-.07 1.432.117 2.448.629 3.026 1.513.6.885.877 1.978.831 3.305-.023 1.303-.323 2.77-.9 4.352-.555 1.582-1.294 3.188-2.172 4.794-.462 1.07-1.062 2.234-1.755 3.467-.254.442-.693 1.14-1.409 2.094a20.122 20.122 0 01-2.032 2.56c.184-.116.508-.256.97-.372.439-.14.993-.116 1.616.023.624.14 1.294.489 2.033 1.047.739.559 1.501 1.467 2.263 2.7.578 1 .97 2.21 1.155 3.63.185 1.42.185 2.933-.023 4.492a23.735 23.735 0 01-1.109 4.677c-.53 1.56-1.2 2.933-2.032 4.12-.831 1.186-1.778 2.14-2.84 2.839-1.063.698-2.218 1.024-3.465.93v-.07c-.809 0-1.57-.511-2.287-1.535-.716-1.024-1.432-2.653-2.17-4.887-.601-1.746-1.248-2.816-1.987-3.282a233.556 233.556 0 00-.323 5.376c-.07 1.56-.139 2.77-.208 3.584-.07.326-.185.652-.324.954-.161.326-.37.559-.67.722-.554.372-1.085.535-1.593.488-.508-.046-.993-.395-1.478-1.047-.462-.675-.901-1.722-1.317-3.165-.392-1.443-.785-3.374-1.155-5.818-.323-2.187-.53-4.63-.623-7.354-.023-.302-.023-.628-.023-.93-.416.581-.832 1.14-1.27 1.745a1936.507 1936.507 0 00-3.419 4.63c-1.847 2.468-3.395 3.864-4.688 4.143a4.49 4.49 0 01-.393.093c-.115.024-.254.024-.393.024h-.161c-.439.07-.97-.047-1.64-.373a10.426 10.426 0 01-1.917-1.256 11.191 11.191 0 01-1.64-1.676c-.485-.605-.762-1.164-.831-1.699a26.432 26.432 0 01-.3-4.305c.023-.07.023-.116.023-.186-.047.07-.07.14-.116.21a138 138 0 01-2.171 3.653 38.285 38.285 0 01-2.194 3.281c-1.825 2.397-3.372 3.77-4.62 4.143a1.66 1.66 0 01-1.154.07 3.29 3.29 0 01-.947-.257c-.254-.116-.462-.21-.6-.302-.855-.42-1.64-1-2.403-1.769-.739-.768-1.34-1.699-1.778-2.816a18.576 18.576 0 01-.947-3.56 22.159 22.159 0 01-.277-3.538c0-1.21.092-2.49.254-3.84.162-1.35.393-2.815.693-4.421.23-1.396.508-2.467.831-3.188.324-.722.67-1.234 1.017-1.536.346-.303.692-.466 1.016-.466h.877c.693 0 1.27.14 1.733.396.462.28.831.582 1.131.908.324.372.578.79.762 1.233-.438 1-.785 2.327-1.039 4.026a90.438 90.438 0 00-.6 5.236 67.183 67.183 0 00-.254 5.097c0 1.605.023 2.839.092 3.653.07.652.254 1.234.577 1.722.3.49.67.931 1.017 1.28.854-.465 1.94-1.582 3.256-3.35a54.99 54.99 0 003.28-5.004 118.778 118.778 0 002.818-5.004c.161-1.35.346-2.653.554-3.886.208-1.233.393-2.327.577-3.281.231-1.397.647-2.583 1.247-3.584.624-1 1.27-1.769 1.964-2.35.716-.582 1.362-.978 1.963-1.234.6-.256 1.04-.372 1.293-.372.97.07 1.825.279 2.495.582.693.302 1.247.674 1.686 1.117.438.418.785.837.993 1.256.208.42.37.745.439 1 .023.047.046.14.046.257l.046.07c.254 2.63-.855 4.957-3.303 6.981-.716.559-1.409 1.024-2.055 1.35-.647.349-1.109.535-1.41.628-.207 2.42-.369 5.423-.484 8.96 0 .093 0 .28.046.558.046.28.07.629.115 1.048.047.419.07.86.116 1.303.023.465.046.884.046 1.303a.608.608 0 00.323-.07c.924-.186 2.148-1.35 3.696-3.537 1.062-1.443 2.217-2.979 3.418-4.631.9-1.234 1.732-2.374 2.54-3.468 0-1.442.024-2.909.07-4.375.092-2.816.23-5.562.416-8.261.184-2.7.37-5.12.6-7.214.208-2.095.416-3.794.624-5.097.208-1.303.346-1.978.462-2.071.3-.21.97-.372 2.032-.465zm15.151 3.118c-.23-.07-.462-.047-.716.07-.277.116-.646.372-1.062.745-.439.372-.947 1-1.548 1.861-.6.861-1.27 2.025-2.032 3.491-.74 1.466-1.57 3.351-2.494 5.655a305.012 305.012 0 00-1.455 3.863 91.306 91.306 0 00-1.178 3.374c-.139 2.188-.3 4.445-.44 6.773-.138 2.327-.3 4.56-.484 6.655 1.409.373 2.587 1.908 3.533 4.631.44 1.28.832 2.28 1.155 2.979.324.698.624 1.21.878 1.536.254.326.439.512.577.582.139.07.208.093.254.093.024 0 .139-.07.3-.186.162-.117.393-.466.694-1.024.3-.559.623-1.397.993-2.537.346-1.14.762-2.723 1.2-4.794.278-1.373.44-2.583.486-3.653 0-1.56-.093-2.956-.324-4.143-.23-.791-.508-1.443-.831-1.978-.347-.512-.716-.954-1.109-1.257-.415-.302-.785-.535-1.131-.674a5.21 5.21 0 00-.878-.28 3.433 3.433 0 00-.416-.07c-.439-.093-.693-.395-.808-.907-.07-.582.115-.908.6-1 .37-.14.855-.536 1.432-1.188 1.594-2.21 2.772-4.328 3.534-6.33.785-2 1.293-3.816 1.524-5.422.231-1.606.3-2.979.162-4.165-.139-1.187-.277-2.072-.416-2.7zM156.224 0c.577 0 1.131.163 1.616.465.508.303.878.815 1.109 1.513.23.698.162 1.676-.254 2.909-.185.535-.462 1.49-.855 2.84a71.92 71.92 0 00-1.178 5.003c.485 0 .947 0 1.432-.024.485-.023.947-.046 1.432-.093 2.056-.21 3.534-.488 4.412-.86.877-.373 1.455-.746 1.755-1.118.393-.442.785-.442 1.201 0 .346.396.37.861.046 1.35-1.247 1.396-3.672 2.257-7.275 2.537a43.17 43.17 0 01-3.465.116c-.438 2.28-.831 4.77-1.177 7.517a72.735 72.735 0 00-.555 8.564c-.023 2.955.162 5.98.555 9.029.392 3.049 1.085 6.004 2.124 8.843.185.466.37.861.6 1.187.186.326.394.605.601.838.231.233.44.349.67.349.37-.372.693-.908.993-1.606.37-1 .832-2.21 1.41-3.654a359.541 359.541 0 011.778-4.514c.623-1.56 1.247-3.142 1.847-4.701.6-1.583 1.178-2.979 1.686-4.212.416-1.047.762-1.909 1.063-2.63.184-.908.37-1.699.623-2.234.324-.698.67-1.233 1.017-1.536.346-.302.692-.465 1.016-.465h.877c.693 0 1.27.116 1.733.395.462.28.831.582 1.131.908.324.372.578.791.763 1.233-.44 1-.786 2.327-1.04 4.026a73.89 73.89 0 00-.6 5.236 67.184 67.184 0 00-.254 5.097c0 1.606.023 2.839.092 3.653.07.652.254 1.234.577 1.723.324.488.67.93 1.086 1.303.855-.466 1.94-1.583 3.257-3.351v-.07c.069-.047.508-.512 1.27-1.396a66.373 66.373 0 013.256-3.375c1.27-1.326 2.91-2.862 4.897-4.584 1.986-1.746 4.226-3.445 6.72-5.143 5.66-3.887 11.133-6.447 16.468-7.68 6.744-1.56 13.003-1.024 18.778 1.606.207.07.37.232.461.488.093.233.093.49.047.815-.093.256-.254.442-.485.535a.56.56 0 01-.6-.023c-3.119-1.396-6.237-2.164-9.332-2.257-3.118-.094-6.097.209-9.007.93a38.732 38.732 0 00-8.269 3.072c-2.61 1.327-4.988 2.7-7.113 4.143a73.514 73.514 0 00-6.236 4.794c-1.871 1.629-3.534 3.141-4.92 4.491-1.386 1.35-2.494 2.49-3.303 3.398-.808.907-1.247 1.42-1.316 1.536-.924 1.28-1.732 2.257-2.471 2.885-.74.629-1.432 1.048-2.102 1.257a1.66 1.66 0 01-1.155.07 3.29 3.29 0 01-.947-.256c-.254-.117-.462-.21-.6-.303a8.979 8.979 0 01-2.425-1.768 7.456 7.456 0 01-1.756-2.816 22.9 22.9 0 01-.97-3.56c-.208-1.141-.3-2.328-.277-3.538.023-.675.116-1.42.162-2.141-.07.163-.139.326-.208.512-.6 1.56-1.224 3.118-1.848 4.677-.623 1.56-1.2 3.072-1.778 4.515a145.345 145.345 0 00-1.41 3.654c-.738 1.908-1.777 3.002-3.14 3.281a.838.838 0 01-.347.07h-.346c-.531 0-1.04-.093-1.524-.28a7.232 7.232 0 01-1.34-.674c-.416-.28-.785-.535-1.109-.815-.323-.279-.577-.488-.762-.651-.323-.233-.67-.698-1.04-1.42-.369-.721-.807-1.885-1.316-3.537-.485-1.606-.831-3.421-1.085-5.306a91.964 91.964 0 01-1.27 4.305c-.555 1.699-1.063 2.979-1.548 3.84-.831 1.49-2.102 2.234-3.741 2.234-.162 0-.278 0-.416-.023-.139-.023-.277-.023-.416-.023-.323-.07-.623-.14-.9-.21a3.436 3.436 0 01-.74-.21 1.682 1.682 0 01-.831-.372l-.116-.116c-.046 0-.115-.07-.23-.186a5.155 5.155 0 01-1.756-2.537c-.439-1.117-.716-2.653-.831-4.584-.555 1.373-1.363 2.35-2.425 2.978-.44.28-.901.466-1.386.559-.485.07-.947.116-1.386.116-.254 0-.508 0-.74-.023a6.235 6.235 0 01-.692-.093c-.508 0-1.109-.116-1.778-.372a8.327 8.327 0 01-1.964-1.024 7.363 7.363 0 01-1.593-1.443c-.116-.14-.162-.256-.254-.396-.485 1.234-.947 2.467-1.386 3.607-1.178 2.932-2.31 4.748-3.418 5.446-.508.372-1.201.558-2.056.558-.877 0-1.755-.186-2.679-.581-.9-.396-1.778-.978-2.633-1.77-.831-.767-1.478-1.791-1.917-3.024-.393-1.024-.647-2.258-.762-3.677a41.241 41.241 0 01-.046-4.492c-.347.861-.762 1.815-1.201 2.84a27.096 27.096 0 01-1.594 3.164c-.947 1.862-2.102 2.886-3.464 3.095-.07.047-.208.07-.393.07a.49.49 0 01-.277-.07c-.485 0-1.063-.162-1.732-.465-.693-.302-1.34-.721-1.964-1.21-.623-.489-1.154-1.024-1.57-1.63-.416-.604-.624-1.163-.624-1.698a86.4 86.4 0 01.37-5.213c-.554.768-1.132 1.56-1.732 2.374a1936.485 1936.485 0 00-3.419 4.631c-1.847 2.467-3.395 3.863-4.688 4.142a4.49 4.49 0 01-.393.093c-.115.024-.254.024-.392.024h-.162c-.439.07-.97-.047-1.64-.373a10.426 10.426 0 01-1.917-1.256 11.191 11.191 0 01-1.64-1.676c-.485-.605-.762-1.163-.831-1.699a26.432 26.432 0 01-.3-4.305c.023-1.443.115-2.886.277-4.259.161-1.396.346-2.7.554-3.933.208-1.233.393-2.327.577-3.28.231-1.397.647-2.584 1.248-3.585.623-1 1.27-1.768 1.963-2.35.716-.582 1.363-.978 1.963-1.234.6-.256 1.04-.372 1.293-.372.97.07 1.825.28 2.495.582.693.302 1.247.675 1.686 1.117.439.419.785.838.993 1.257.208.418.37.744.439 1 .023.047.046.14.046.256l.046.07c.254 2.63-.854 4.957-3.303 6.982-.716.558-1.408 1.024-2.055 1.35-.647.348-1.109.535-1.409.628-.208 2.42-.37 5.422-.485 8.96 0 .092 0 .279.046.558s.07.628.116 1.047c.046.419.069.861.115 1.303.023.466.046.885.046 1.303a.608.608 0 00.324-.07c.923-.186 2.148-1.35 3.695-3.537 1.062-1.443 2.217-2.978 3.418-4.63 1.201-1.653 2.333-3.189 3.35-4.585.045-.093.138-.186.184-.256.162-1.094.3-2.211.485-3.282.208-1.396.6-2.583 1.155-3.583.554-1.001 1.132-1.769 1.755-2.35.624-.56 1.201-.978 1.755-1.257.532-.256.947-.396 1.201-.396.116 0 .208 0 .3.023.093.023.185.023.3.023 1.179.047 2.334.443 3.488 1.21 1.155.745 2.125 1.49 2.887 2.188 0-.046 0-.07.024-.093.023-.023.023-.07.023-.163.23-1.396.508-2.467.831-3.188.323-.722.67-1.233 1.04-1.513.369-.302.715-.442 1.039-.442h.831c.693 0 1.27.116 1.732.372.462.233.832.536 1.132.861.324.373.578.792.762 1.234-.3.675-.577 1.629-.831 2.886a64.001 64.001 0 00-.693 4.212 202.9 202.9 0 00-.577 4.863 101.54 101.54 0 00-.416 4.794c-.093 1.513-.139 2.84-.185 4.026-.046 1.164-.046 2.025 0 2.56.07.768.3 1.443.693 2.002.393.558.808 1.024 1.293 1.396.185 0 .37 0 .555-.023.184-.024.37-.093.6-.21.762-.442 1.686-1.955 2.749-4.514a1129.6 1129.6 0 012.148-5.54c.069-.209.138-.395.23-.604-.046-1.42-.069-2.816-.023-4.142.07-2.002.185-4.003.324-5.981.07-.792.092-1.746.046-2.91-.046-1.163.023-2.117.208-2.908.185-.745.739-1.094 1.663-1 .924.092 2.01.395 3.303.93.346.14.6.372.808.721.185.35.346.722.462 1.14.115.42.185.815.23 1.234.047.419.047.768 0 1.047a73.998 73.998 0 00-.669 6.68c-.162 2.443-.092 5.468.162 9.098 0 .21.046.466.161.745.393.093.855.117 1.34.093.508-.023 1.016-.186 1.524-.465.993-.605 1.663-1.746 2.033-3.398.161-.814.3-1.443.346-1.908.046-.442.093-.884.139-1.35.069-.442.161-.954.254-1.536.092-.582.23-1.35.416-2.35.092-2.095.254-4.12.461-6.028.185-1.908.393-3.583.624-4.98.254-1.396.554-2.466.878-3.188.323-.721.67-1.233 1.016-1.513.346-.302.693-.442 1.016-.442h.878c.693 0 1.27.117 1.732.373.462.232.832.535 1.132.86.323.373.577.792.762 1.234-.3.652-.577 1.722-.808 3.188-.254 1.466-.462 3.119-.67 4.98a133.496 133.496 0 00-.531 5.842c-.139 2.047-.254 3.979-.324 5.818-.07 1.838-.115 3.42-.161 4.817-.047 1.396-.024 2.35.046 2.885.023.233.092.536.161.861.07.326.208.606.44.862.785-.117 1.385-.559 1.824-1.304.3-.535.623-1.256.97-2.187.346-.931.693-1.955 1.016-3.072.347-1.117.647-2.234.97-3.398.324-1.14.6-2.187.832-3.118.023-.07.023-.117.046-.163-.093-1.722-.139-3.468-.093-5.26.047-2.815.208-5.585.485-8.354.278-2.77.601-5.352.97-7.796a23.384 23.384 0 00-1.732-.07h-1.247c-.878.093-1.501.326-1.825.745-.184.302-.277.535-.277.745-.046.163-.046.279 0 .372.047.302-.023.535-.161.745a.83.83 0 01-.555.372h-.115c-.439 0-.74-.28-.878-.815 0-.093 0-.395.046-.93.047-.536.254-1.094.67-1.676.6-.861 1.594-1.373 2.98-1.49h1.455c.577 0 1.224.024 1.963.07.392-2.28.785-4.235 1.2-5.91.393-1.676.74-2.886 1.04-3.677.3-.699.624-1.304.947-1.77.323-.464.67-.814.993-1.023.254-.163.693-.256 1.27-.256zM27.554 4.12c.255-.07.486-.07.694.069.207.14.346.349.415.628.093.256.07.489-.046.745a.964.964 0 01-.554.489c-2.194.698-4.62 4.584-7.299 11.566a166.687 166.687 0 00-1.732 4.91c-.554 1.722-1.108 3.444-1.617 5.166-.508 1.746-.993 3.444-1.478 5.143-.485 1.676-.947 3.282-1.385 4.818a424.056 424.056 0 01-2.056 7.167c-.6 2.025-1.132 3.49-1.57 4.399-1.063 1.931-2.172 2.908-3.35 2.908h-.115c-.208 0-.37-.023-.439-.07h-.161c-.44-.162-.924-.418-1.456-.767-.53-.35-1.062-.908-1.593-1.676-.531-.768-1.063-1.838-1.548-3.188-.485-1.373-.923-3.142-1.293-5.33a68.52 68.52 0 01-.67-6.585 197.507 197.507 0 01-.277-7.494c-.046-2.536-.023-5.003.046-7.423.07-2.42.162-4.585.277-6.493.093-1.908.208-3.444.324-4.631.115-1.164.208-1.792.277-1.885.115-.07.346-.28.67-.582.323-.302.762-.558 1.316-.768.554-.21 1.224-.28 1.986-.186.786.093 1.686.465 2.703 1.117A5.92 5.92 0 019.17 7.563c.439.559.716 1.327.878 2.28.161.955.138 2.235-.023 3.77-.185 1.56-.532 3.515-1.086 5.912-.623 2.676-1.155 5.539-1.617 8.54-.438 3.026-.808 5.888-1.062 8.611a102.066 102.066 0 00-.439 7.168c-.023 2.07.093 3.467.393 4.212.092.349.208.652.323.908.116.256.208.512.277.767.254.303.508.443.716.443.555.046 1.178-.629 1.871-1.978.393-.768.9-2.165 1.478-4.166.6-2.001 1.247-4.282 1.987-6.888.438-1.536.923-3.142 1.408-4.864a743.416 743.416 0 001.525-5.19c.508-1.768 1.04-3.514 1.616-5.236a90.158 90.158 0 011.779-5.003c1.316-3.491 2.61-6.26 3.857-8.285 1.501-2.467 3.002-3.956 4.504-4.445zm79.36 22.922c-.509-.07-.81-.024-.878.186a20.597 20.597 0 00-1.178 3.095 29.81 29.81 0 00-.878 3.956 73.453 73.453 0 00-.6 5.073c-.162 1.909-.255 4.026-.3 6.377-.047.07-.024.302.045.675h.047c.762-.14 1.5-.885 2.194-2.234a27.623 27.623 0 001.547-3.096c.439-1.047.832-1.978 1.155-2.792.393-.954.74-1.722 1.016-2.327.277-.582.555-1.048.855-1.327.07-.93.161-1.885.3-2.839.116-.954.254-1.862.416-2.676a7.54 7.54 0 00-.6-.629 5.53 5.53 0 00-.763-.628c-1.085-.465-1.87-.721-2.379-.814zm-16.191-2.816c-.324-.07-.624-.047-.855.07a1.337 1.337 0 00-.577.558 8.712 8.712 0 00-.277.489c-.855 1.745-1.502 3.956-1.94 6.702.438-.256.97-.558 1.547-.93a7.817 7.817 0 001.663-1.397 7.49 7.49 0 001.27-1.885c.324-.698.439-1.49.324-2.35v-.257c-.44-.581-.832-.907-1.155-1zm-42.405 0c-.323-.07-.623-.047-.854.07a1.337 1.337 0 00-.578.558 8.712 8.712 0 00-.277.489c-.831 1.745-1.478 3.956-1.94 6.702.439-.256.97-.558 1.547-.93a7.817 7.817 0 001.663-1.397 7.49 7.49 0 001.27-1.885c.324-.698.44-1.49.324-2.35v-.257c-.439-.581-.831-.907-1.155-1zm-20.38-9.473l.217.001c.6.047 1.155.186 1.663.442s.9.629 1.132 1.094c.23.489.323 1 .277 1.583a4.9 4.9 0 01-.554 1.768 4.991 4.991 0 01-1.294 1.583c-.554.465-1.178.675-1.847.628-.67-.046-1.317-.186-1.894-.442a13.433 13.433 0 01-2.033-1.187c.347-1.443.762-2.56 1.247-3.351.485-.791 1.017-1.35 1.594-1.676a3.085 3.085 0 011.71-.442zm146.315-.124l.193.009c.6.046 1.155.186 1.663.442s.901.628 1.132 1.094c.231.488.323 1 .277 1.582a4.684 4.684 0 01-.554 1.722 5.386 5.386 0 01-1.293 1.536c-.555.466-1.178.675-1.848.652a5.734 5.734 0 01-1.917-.372 8.489 8.489 0 01-2.033-1.187c.347-1.443.763-2.56 1.248-3.351.485-.792 1.016-1.35 1.593-1.676a2.809 2.809 0 011.732-.442z" fill="#010101" fill-rule="nonzero"/></svg>
           </div>
-        <div className="tablist">
-        <div id="order" className="tabunit activeTab step1">
-          <p>1. Your Order</p>
         </div>
-        <div id="feedback"  className={this.state.noTitleKey == 'feedback' || this.state.noTitleKey == 'review' ? "tabunit activeTab  step2" : "tabunit  step2" }>
-          <p>2. Your Feedback</p>
-        </div>
-        <div id="review step3" className={this.state.noTitleKey == 'review' ? "tabunit activeTab step3" : "tabunit step3" }>
-          <p>3. Your Benefit</p>
-        </div>
-        </div>
+        <div className="panel">
+          <div className="toptitle">
+            <h1>Claim Your Benefit Now!!!</h1>
+            {this.props.order_info['AmazonOrderId'] == '' ? null : <p className="orderside">Your Order Id: {this.props.order_info['AmazonOrderId']}</p>}
+
+          </div>
+          <div className="tablist">
+            <div id="order" className={this.props.step_info.length > 1 ? "tabunit passedTab" : "tabunit activeTab" }>
+              Your Order
+            </div>
+            <div id="feedback"  className={this.props.step_info.length > 2 ? "tabunit passedTab" : this.props.step_info.length > 1 ? "tabunit activeTab" : "tabunit" }>
+              Your Feedback
+            </div>
+            <div id="benefit" className={this.props.step_info.length > 3 && this.props.order_info['star'] > 3 ? "tabunit passedTab" : this.props.step_info.length > 2 && this.props.order_info['star'] > 3 ? "tabunit activeTab" : "tabunit" }>
+              Your Benefit
+            </div>
+            <div id="getbenefit" className={this.props.step_info.length > 3 && this.props.order_info['star'] > 3 ? "tabunit activeTab" : "tabunit" }>
+              Unlock Benefit
+            </div>
+          </div>
 
           <Card
             type="inner"
-            headStyle={headStyle}
-            bordered={false}
-            style = {
-              {
-                fontSize: 20,
-                width: '100%',
-                backgroundColor: 'transparent',
-                border: 0
-              }
-            }
-
-            >
-            {contentListNoTitle[this.state.noTitleKey]}
+            headStyle={headStyle}>
+            {contentListNoTitle[ this.state.step]}
 
           </Card>
+          <div className="clear"></div>
+        </div>
 
+        <div className="bg">
+            <img src={logo_white}/>
+        </div>
       </div>
     )
   }
 }
 
-export default Responsive(GetReview);
+
+function mapStateToProps(state) {
+  return {
+    order_info: state.order_info,
+    step_info: state.step_info,
+    user_info: state.user_info
+  }
+}
+
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators(ActionCreators, dispatch);
+}
+export default connect(mapStateToProps, mapDispatchToProps)(GetReview);

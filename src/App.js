@@ -1,25 +1,22 @@
 import React from 'react';
+import { applyMiddleware, createStore, compose } from 'redux'
 import GetReview from './getReview/GetReview';
-import Background from './background.jpg';
-import { OverflowDetector } from 'react-overflow';
-import style from './index.css'
+// import Background from './background.jpg';
+import configureStore from './store/configureStore'
+import { Provider } from 'react-redux'
 
-function handleOverflowChange(isOverflowed) {
-  console.log(isOverflowed);
-}
- 
-//test 2
+const store = configureStore()
 
 function App() {
   return (
-    <div
+  	 <Provider store={store}>
+        <div className="overwapper">
+        </div>
+          <div className="background">
+          <GetReview/>
+          </div>
 
-      className="overwapper"
-    >
-
-        <GetReview/>
-
-    </div>
+    </Provider>
 
   );
 }

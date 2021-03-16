@@ -1,18 +1,23 @@
 @import '~antd/dist/antd.css';
+@import 'fonts/ACaslonPro/stylesheet.css';
 
-@import url('https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Patua+One&display=swap');
-@import Background from './background.jpg';
+/*@import url('https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600&display=swap');*/
+/*@import url('https://fonts.googleapis.com/css2?family=Patua+One&display=swap');*/
+/*@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');*/
+/*@import Background from './background.jpg';*/
 html, body{
     /* box-sizing: content-box; */
     width: 100%;
     height: 100%;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: Helvetica, Arial, sans-serif;
+}
+body {
+  background: #a87dad;
 }
 #root{
     /* box-sizing: content-box; */
     width: 100%;
-    height: 100%
+    height: 100%;
 }
 
 ::-webkit-scrollbar{
@@ -20,18 +25,27 @@ html, body{
     height: 5px;/* 横向滚动条 */
 }
 
-.overwapper{background-image: url("./background.jpg");
-  height: 100%;
-  width: 100%;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items:center;
-  justify-content: center;
+.overwapper{
+  -webkit-background-size: 323px 320px;
+  -moz-background-size: 323px 320px;
+  -o-background-size: 323px 320px;
+  height: 100%; width: 100%;
+  position: fixed;
+  top:0px;left:0px;
+  background-size: 323px 320px;
+  z-index: 0;
+  opacity: 0.3;
+
 }
 
+.background{
+position: absolute;
+left: 0px; top:0px; z-index: 10;
+  display: flex; width: 100%; height: 100%;
+  align-items:center;
+  justify-content: center;
+
+}
 .ant-btn-primary:hover, .ant-btn-primary:focus{background: #B7034E;border-color: #B7034E;}
 .ant-btn-primary{border-color:#B7034E;}
-* {
-  font-family: 'Maven Pro', sans-serif;
-}
+/* * {font-family: 'Maven Pro', sans-serif; }*/

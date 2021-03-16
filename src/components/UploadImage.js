@@ -1,60 +1,110 @@
 import React, {Component} from 'react';
-import { Upload, Button, Icon } from 'antd';
-import FirebaseFileUploader from  '../firebase-fileupload';
+import { Upload, Button, Icon,notification,Modal } from 'antd';
+import {connect} from 'react-redux'
+import {bindActionCreators} from 'redux'
 
+import { ActionCreators } from '../actions'
 const url = process.env.NODE_ENV === 'development' ? "/upload" : "/service/upload"
 var fileNumber = 0
+function getBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
 class UploadImage extends React.Component {
   state = {
-    fileList: [],
+    previewVisible: false,
+    previewImage: '',
+    fileList:this.props.order_info['imagelist']
   };
 
-  handleChange = info => {
-    let fileList = [...info.fileList];
-    console.log(info);
-    // 1. Read from response and show file
-    let fileNameList = []
+  handleCancel = () => {
+    console.log('cancel')
+    this.setState({ previewVisible: false });
+  }
 
-    fileList = fileList.map(file => {
-      if (file.response) {
-        // Component will show file.url as link
-        file.url = file.response.url;
-        fileNameList.push(file.response.url)
-      }
-      return file;
-    });
-    if (fileNameList.length > fileNumber) {
-      fileNumber = fileNameList.length
-      this.props.handleReviewScreenShotSubmit(fileNameList)
-    } else if (fileNameList.length < fileNumber) {
-      fileNumber = fileNameList.length
+  handleRemove = async file => {
+    this.props.deleteImagePath(file)
+  }
+
+  handlePreview = async file => {
+    if (!file.url && !file.preview) {
+      file.preview = await getBase64(file.originFileObj);
+
     }
-    this.setState({ fileList });
+
+    this.setState({
+      previewImage: file.url || file.preview,
+      previewVisible: true,
+    });
   };
 
-  
+  handleChange = ({ fileList }) => {
+    if (fileList.length > this.state.fileList.length){
+      this.handleReviewScreenShotSubmit(fileList[fileList.length - 1])
+    }
+    this.setState({fileList})
+  }
+
+  handleReviewScreenShotSubmit(path){
+    this.props.setImagePath(path)
+    notification['success']({
+      message: 'Notification Title',
+      description:
+        'Thank you for your review, the image is uploaded successfully!',
+    });
+  }
+
 
   render() {
-    const customRequest = ({onSuccess, file}) => {
-      FirebaseFileUploader.upload(file).then((uploadedFile) => {
-        console.log(uploadedFile);
-        onSuccess(uploadedFile);
-      })
-    };
+    const { previewVisible, previewImage, fileList } = this.state;
+   const uploadButton = (
+     <div>
+       <Icon type="plus" />
+       <div className="ant-upload-text">Upload</div>
+     </div>
+   );
 
-    const uploadProps = {
+
+
+
+    const props = {
+      name: 'file',
+      action: `${url}`,
+      listType:"picture-card",
+      fileList:fileList,
+      onPreview:this.handlePreview,
       onChange: this.handleChange,
-      customRequest: customRequest
+      onRemove:this.handleRemove,
+      multiple: true,
+      data: {
+        ASIN: this.props.order_info['items'][0]['ASIN'],
+        OrderId: this.props.order_info['AmazonOrderId']
+      }
     };
-
-    
     return (
-      <Upload {...uploadProps} fileList={this.state.fileList}>
-        <Button>
-          <Icon type="upload" /> Upload your review screenshot
-        </Button>
+      <div className="imageuploader">
+      <Upload {...props}>
+      {(fileList.length >= 2 || !this.props.upload_allowed) ? null : uploadButton}
       </Upload>
+      <Modal visible={previewVisible} footer={null} onCancel={this.handleCancel}>
+            <img alt="example" style={{ width: '100%' }} src={previewImage} />
+      </Modal>
+        </div>
     );
   }
 }
-export default  UploadImage;
+
+function mapStateToProps(state){
+  return{
+    order_info:state.order_info,
+    step_info:state.step_info
+  }
+}
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators(ActionCreators, dispatch);
+}
+export default connect(mapStateToProps,mapDispatchToProps)(UploadImage);

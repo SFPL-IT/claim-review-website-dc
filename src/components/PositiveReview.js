@@ -1,14 +1,22 @@
 import React, { Component } from 'react';
 import UploadImage from './UploadImage';
 import './component.css'
-import { Lightbox } from "react-modal-image";
 import {
   Button,
   Row,
+  message,
+  notification,
   Col,
 } from 'antd';
-import cat from '../backcat.png';
-import instruction from '../instruction.png';
+// import cat from '../backcat.png';
+import sample from '../sample.jpg';
+import {connect} from 'react-redux'
+import {bindActionCreators} from 'redux'
+import { ActionCreators } from '../actions'
+
+import config from 'react-global-configuration'
+
+
 const reviewCardStyle = {
   color : '#333',
   fontSize : 14,
@@ -21,69 +29,67 @@ const reviewCardStyle = {
 }
 
 
+class PositiveReview extends Component {
 
-function check_url_tail(country){
-  if ( country == 'CA') {
-    return 'ca'
-  }else if( country == 'UK'){
-    return 'co.uk'
-  }else{
-    return 'com'
-  }
-}
-export default class PositiveReview extends Component {
-
-  state = {
-    open: false,
-  }
-  closeLightbox(){
-    this.setState({open:false})
-  }
-
-  openLightbox(){
-    this.setState({open:true})
-  }
-
-  getpopup(){
-    if (this.state.open){
-      return <Lightbox medium={instruction} hideZoom={true} alt="How to Leave your Review on Amazon?" onClose={()=>this.closeLightbox()}/>
+  getRewardPrice(){
+    var order_reward = this.props.order_info['reward']
+    if (order_reward == null){
+      return 10
     }else{
-      return null
+      return order_reward
     }
   }
 
+  goback(){
+    this.props.back()
+  }
+
+  submitReview(){
+    this.props.push('SuccessBanner')
+  }
+
+  check_url_tail(country){
+      if ( country == 'CA') {
+        return 'ca'
+      }else if( country == 'UK'){
+        return 'co.uk'
+      }else{
+        return 'com'
+      }
+    }
+
 
   render() {
-    var url_country = check_url_tail(this.props.Country)
+    var country = this.check_url_tail(this.props.order_info['items'][0]['country'])
+
+    var asin = this.props.order_info['items'][0]['ASIN']
+    var order_id = this.props.order_info['AmazonOrderId']
+
     return (
-      <div id='reviewb' className="feedbox">
-      <div className="contentbox">
-        <p className="reviewCardStyle">
-          Thank you! We are so excited you came for your Benefit! </p>
-
-         <p className="reviewCardStyle"> You can choose to receive either a <strong>${this.props.reward} amazon gift card </strong> OR <strong>the same product</strong> (for free) </p>
-         <p className="reviewCardStyle">when you complete these steps. We truly appreciate your review on Amazon as it helps us immensely!</p>
-         <p className="reviewCardStyle">Please kindly support our growing business by <strong>leaving us 5 stars</strong>.</p>
-         <p className="reviewCardStyle">Please save your review screenshot and return here to upload it, </p>
-         <p className="reviewCardStyle">so that you can unlock your benefit! </p>
-         <p className="reviewCardStyle">Thank you for your business and your time!
+      <div id='reviewb' className="content">
+        <h2 className="h2">Unlock Your Benefit</h2>
+        <p className="p">Dear customer, thank you so much for your precious feedback about our product! We have recorded it and will continue to improve our product according to your suggestions!</p>
+        <p className="p">We are a newly start up business, with several young staff working together, trying everything possible to provide the best products and the most satisfying services to our customers. But as you may not know, low ratings might cause Amazon to limit the selling rights of our new store, so we will never have any chance to develop and improve our business any more.</p>
+        <p className="p">In this case, we want to kindly ask, could you do us a favor to <strong className="highlight">leave us a 5-star review on Amazon</strong>? It will greatly help us to serve you better!</p>
+        <p className="p center-align">
+          <Button type="primary" className="btn-highlight btn-round"  target="_blank" href={`https://www.amazon.${country}/review/create-review/?asin=${asin}%3A5`}>Click To Leave A 5-Star Review </Button>
         </p>
-
-        <Button type="primary" style={{marginTop:"30px"}}  className="mybtn"  target="_blank" href={`https://www.amazon.${url_country}/review/create-review/?asin=${this.props.ASIN}%3A5`}>Leave Your Review</Button>
-        <div className="clean"></div>
-        <a onClick={()=>this.openLightbox()} id="how_to" className="how_to" >How to Leave your Review on Amazon? </a>
-  </div>
-
-
-  {this.getpopup()}
-  <div className="contentbox">
-        <UploadImage className="uploadimage" OrderId={this.props.OrderId} ASIN={this.props.ASIN} handleReviewScreenShotSubmit={this.props.handleReviewScreenShotSubmit} OrderId={this.props.OrderId}/>
-    <p style={{fontSize:"14px",marginTop:'-10px'}}>maximum file size:1 MB</p>
-
-            <Button type="primary" className="mybtn" onClick={this.props.submitReview}>Submit</Button>
-         </div>
-         <div className="backimg"><img src={cat}/></div>
+        <p className="p">Leave feedback for the products on Amazon and claim all offers!</p>
+        <p className="p">After the review is posted, you will receive one confirmation email from amazon, please forward Amazon’s confirmation email to <a href={"mailto:" + config.get('email')}>{config.get('email')}</a>, then you can unlock your benefit!</p>
+        <p className="p">We suggest you record the email address above for further reference. And here’s a sample of the confirmation email you’ll receive:</p>
+        <p className="p"><img src={sample} className="screenshotamazon"/></p>
+        <p className="p">If you have any other questions about this survey, please contact <a href={"mailto:" + config.get('email')}>{config.get('email')}</a>.</p>
       </div>
     );
   }
 }
+function mapStateToProps(state){
+  return{
+    order_info:state.order_info,
+    step_info:state.step_info
+  }
+}
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators(ActionCreators, dispatch);
+}
+export default connect(mapStateToProps,mapDispatchToProps)(PositiveReview);
